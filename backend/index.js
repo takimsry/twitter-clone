@@ -1,10 +1,10 @@
 import express from 'express';
-import authRoutes from './routes/authRoutes.js';
-import postRoutes from './routes/postRoutes.js';
 import dotenv from 'dotenv';
 import connectMongoDB from './db/connectMongoDB.js';
 import cookieParser from 'cookie-parser';
-import userRoutes from './routes/userRoutes.js';
+import authRoutes from './routes/authRoute.js';
+import postRoutes from './routes/postRoute.js';
+import userRoutes from './routes/userRoute.js';
 import {v2 as cloudinary} from 'cloudinary';
 
 dotenv.config();
