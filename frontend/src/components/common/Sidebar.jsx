@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 const Sidebar = () => {
 	const queryClient = useQueryClient();
 
-	const { mutate } = useMutation({
+	const { mutate:logout } = useMutation({
 		mutationFn: async () => {
 			try {
 				const res = await fetch("/api/auth/logout", {
@@ -87,7 +87,7 @@ const Sidebar = () => {
 							<BiLogOut className='w-5 h-5 cursor-pointer' 
 								onClick={(e) => {
 									e.preventDefault();
-									mutate();
+									logout();
 								}}
 							/>
 						</div>
