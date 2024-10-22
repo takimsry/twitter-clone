@@ -143,7 +143,9 @@ export const likeUnlikePost = async (req, res) => {
 
 export const getAllPosts = async (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1}).populate({
+    const posts = await Post.find()
+    .sort({ createdAt: -1})
+    .populate({
       path: "user",
       select: "_id username fullname profileImg"
     }).populate({
@@ -170,7 +172,9 @@ export const getLikedPosts = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const likedPosts = await Post.find({_id: {$in: user.likedPosts}}).populate({
+    const likedPosts = await Post.find({_id: {$in: user.likedPosts}})
+    .sort({ createdAt: -1})
+    .populate({
       path: "user",
       select: "_id username fullname profileImg"
     }).populate({
@@ -222,6 +226,7 @@ export const getUserPosts = async (req, res) => {
     }
 
     const posts = await Post.find({user: user._id})
+    .sort({ createdAt: -1})
     .populate({
       path: "user",
       select: "_id username fullname profileImg"
