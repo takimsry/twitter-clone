@@ -41,8 +41,8 @@ const EditProfileModal = ({authUser}) => {
 				queryClient.invalidateQueries({queryKey: ["userProfile"]})
 			])
 		},
-		onError: () => {
-			toast.error("Failed to update profile");
+		onError: (error) => {
+			toast.error(error.message);
 		}
 	})
 
