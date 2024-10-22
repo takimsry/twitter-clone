@@ -82,7 +82,13 @@ export const commentOnPost = async (req, res) => {
     post.comments.push(comment);
     await post.save();
 
-    res.status(200).json(post);
+    const updatedPost = await post.populate({
+      path: "comments.user",
+      select: "_id username fullname profileImg"
+    });
+
+    const updatedComments = updatedPost.comments;
+    res.status(200).json(updatedComments);
   } catch (error) {
     console.log("Error in commentOnPost controller", error);
     res.status(500).json({ error: "Internal server error" });
