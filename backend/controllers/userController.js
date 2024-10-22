@@ -69,7 +69,12 @@ export const getSuggestedUsers = async (req, res) => {
         }
       },
       {$sample: {size: 4}},
-      {$project: {password: 0}}
+      {$project: {
+        _id: 1,
+        username: 1,
+        fullname: 1,
+        profileImg: 1
+      }}
     ]);
 
     res.status(200).json(suggestedUsers);
