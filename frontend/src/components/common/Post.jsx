@@ -71,7 +71,7 @@ const Post = ({ post }) => {
 			})
 		},
 		onError: () => {
-			toast.error("Failed to like post");
+			toast.error("Failed to like/unlike post");
 		}
 	});
 
@@ -109,7 +109,7 @@ const Post = ({ post }) => {
 			setComment("");
 		},
 		onError: () => {
-			toast.error("Failed to comment post");
+			toast.error("Failed to comment on post");
 		}
 	});
 

@@ -26,8 +26,8 @@ const useFollow = () => {
         queryClient.invalidateQueries({queryKey: ["authUser"]})
       ])
     },
-    onError:(error) => {
-      toast.error(error.message);
+    onError:() => {
+      toast.error("Failed to follow/unfollow user");
     } 
   })
 
