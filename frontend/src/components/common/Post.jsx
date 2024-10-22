@@ -70,8 +70,8 @@ const Post = ({ post }) => {
 				})
 			})
 		},
-		onError: () => {
-			toast.error("Failed to like/unlike post");
+		onError: (error) => {
+			toast.error(error.message);
 		}
 	});
 
@@ -108,8 +108,8 @@ const Post = ({ post }) => {
 			toast.success("Comment posted successfully");
 			setComment("");
 		},
-		onError: () => {
-			toast.error("Failed to comment on post");
+		onError: (error) => {
+			toast.error(error.message);
 		}
 	});
 
