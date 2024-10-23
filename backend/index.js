@@ -1,12 +1,19 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import connectMongoDB from './db/connectMongoDB.js';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoute.js';
 import postRoutes from './routes/postRoute.js';
 import userRoutes from './routes/userRoute.js';
 import notificationRoutes from './routes/notificationRoute.js';
 import {v2 as cloudinary} from 'cloudinary';
+import { connectDB, sequelize } from './db/connectDB.js';
+
+import Comment from './models/commentModel.js';
+import Follow from './models/followModel.js';
+import LikedPost from './models/likedPostModel.js';
+import Notification from './models/notificationModel.js';
+import Post from './models/postModel.js';
+import User from './models/userModel.js';
 
 dotenv.config();
 
@@ -28,7 +35,12 @@ app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/notifications", notificationRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Server started on http://localhost:${PORT}/`);
-  connectMongoDB();
-});
+const startServer = async () => {
+  await connectDB();
+  // await sequelize.sync();
+  app.listen(PORT, () => {
+    console.log(`Server started on http://localhost:${PORT}/`);    
+  })
+}
+
+startServer();

@@ -1,12 +1,20 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/connectDB.js';
+import Post from './postModel.js';
 import User from './userModel.js';
 
-const Post = sequelize.define('Post', {
+const Comment = sequelize.define('Comment', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
+  },
+  post_id: {
+    type: DataTypes.UUID,
+    references: {
+      model: 'Posts',
+      key: 'id'
+    }
   },
   user_id: {
     type: DataTypes.UUID,
@@ -17,16 +25,13 @@ const Post = sequelize.define('Post', {
   },
   text: {
     type: DataTypes.TEXT,
-    defaultValue: '',
-  },
-  img: {
-    type: DataTypes.STRING,
-    defaultValue: '',
+    allowNull: false
   }
 }, {
   timestamps: true
 });
 
-Post.belongsTo(User, { foreignKey: 'user_id' });
+Comment.belongsTo(Post, { foreignKey: 'post_id' });
+Comment.belongsTo(User, { foreignKey: 'user_id' });
 
-export default Post;
+export default Comment;

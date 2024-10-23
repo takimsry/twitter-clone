@@ -2,31 +2,31 @@ import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/connectDB.js';
 import User from './userModel.js';
 
-const Post = sequelize.define('Post', {
+const Follow = sequelize.define('Follow', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  user_id: {
+  from_user_id: {
     type: DataTypes.UUID,
     references: {
       model: 'Users',
       key: 'id'
     }
   },
-  text: {
-    type: DataTypes.TEXT,
-    defaultValue: '',
-  },
-  img: {
-    type: DataTypes.STRING,
-    defaultValue: '',
+  to_user_id: {
+    type: DataTypes.UUID,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
   }
 }, {
   timestamps: true
 });
 
-Post.belongsTo(User, { foreignKey: 'user_id' });
+Follow.belongsTo(User, { foreignKey: 'from_user_id' });
+Follow.belongsTo(User, { foreignKey: 'to_user_id' });
 
-export default Post;
+export default Follow;

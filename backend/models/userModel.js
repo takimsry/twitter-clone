@@ -1,64 +1,56 @@
-import mongoose from "mongoose";
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../db/connectDB.js';
 
-const userSchema = new mongoose.Schema({
-  username:{
-    type: String,
-    required: true,
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true
   },
-  fullname:{
-    type: String,
-    required: true
+  fullname: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  password:{
-    type: String,
-    required: true,
-    minLength: 6
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: [6, Infinity],
+      msg: "Password must be at least 6 characters long"
+    }
   },
-  email:{
-    type: String,
-    required: true,
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true
   },
-  followers: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: []
-    }
-  ],
-  following: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: []
-    }
-  ],
-  profileImg:{
-    type: String,
-    default: ""
+  profileImg: {
+    type: DataTypes.STRING,
+    defaultValue: '',
+    allowNull: false
   },
-  coverImg:{
-    type: String,
-    default: ""
+  coverImg: {
+    type: DataTypes.STRING,
+    defaultValue: '',
+    allowNull: false
   },
-  bio:{
-    type: String,
-    default: ""
+  bio: {
+    type: DataTypes.TEXT,
+    defaultValue: '',
+    allowNull: false
   },
-  link:{
-    type: String,
-    default: ""
-  },
-  likedPosts:[
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Post",
-      default: []
-    }
-  ]
-},{timestamps: true});
-
-const User = mongoose.model("User", userSchema);
+  link: {
+    type: DataTypes.STRING,
+    defaultValue: '',
+    allowNull: false
+  }
+}, {
+  timestamps: true
+});
 
 export default User;
