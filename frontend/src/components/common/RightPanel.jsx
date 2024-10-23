@@ -5,13 +5,13 @@ import useFollow from "../../hooks/useFollow.jsx";
 import LoadingSpinner from "./LoadingSpinner.jsx";
 
 const RightPanel = () => {
-	const {data:suggestedUsers, isLoading} = useQuery({
+	const { data: suggestedUsers, isLoading } = useQuery({
 		queryKey: ["suggestedUsers"],
 		queryFn: async () => {
 			try {
 				const res = await fetch("/api/users/suggested");
 				const data = await res.json();
-				if(!res.ok){
+				if (!res.ok) {
 					throw new Error(data.error || "Failed to fetch suggested users");
 				}
 				return data;
@@ -21,9 +21,9 @@ const RightPanel = () => {
 		}
 	});
 
-	const {followUnfollow, isPending} = useFollow();
+	const { followUnfollow, isPending } = useFollow();
 
-	if(suggestedUsers?.length === 0) return <div className="md:w-64 w-0"></div>
+	if (suggestedUsers?.length === 0) return <div className="md:w-64 w-0"></div>
 
 	return (
 		<div className='hidden lg:block my-4 mx-2'>
@@ -44,7 +44,7 @@ const RightPanel = () => {
 							<Link
 								to={`/profile/${user.username}`}
 								className='flex items-center justify-between gap-4'
-								key={user._id}
+								key={user.id}
 							>
 								<div className='flex gap-2 items-center'>
 									<div className='avatar'>
@@ -64,10 +64,10 @@ const RightPanel = () => {
 										className='btn bg-white text-black hover:bg-white hover:opacity-90 rounded-full btn-sm'
 										onClick={(e) => {
 											e.preventDefault();
-											followUnfollow(user._id);
+											followUnfollow(user.id);
 										}}
 									>
-										{isPending? <LoadingSpinner size="sm" /> : "Follow"}
+										{isPending ? <LoadingSpinner size="sm" /> : "Follow"}
 									</button>
 								</div>
 							</Link>

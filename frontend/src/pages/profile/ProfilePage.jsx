@@ -18,28 +18,28 @@ import toast from "react-hot-toast";
 
 const ProfilePage = () => {
 	const queryClient = useQueryClient();
-	
+
 	const [coverImg, setCoverImg] = useState(null);
 	const [profileImg, setProfileImg] = useState(null);
 	const [feedType, setFeedType] = useState("posts");
-	
+
 	const coverImgRef = useRef(null);
 	const profileImgRef = useRef(null);
-	
+
 	const { username } = useParams();
 
-	const {followUnfollow, isPending} = useFollow();
+	const { followUnfollow, isPending } = useFollow();
 
-	const {data:authUser} = useQuery({queryKey: ["authUser"]});
+	const { data: authUser } = useQuery({ queryKey: ["authUser"] });
 
-	const {data:user, isLoading, refetch, isRefetching} = useQuery({
+	const { data: user, isLoading, refetch, isRefetching } = useQuery({
 		queryKey: ["userProfile"],
 		queryFn: async () => {
 			try {
 				const res = await fetch(`/api/users/profile/${username}`);
 				const data = await res.json();
 
-				if(!res.ok){
+				if (!res.ok) {
 					throw new Error(data.error || "Failed to fetch user");
 				}
 				return data;
@@ -53,11 +53,11 @@ const ProfilePage = () => {
 		refetch();
 	}, [username, refetch]);
 
-	const isMyProfile = authUser._id === user?._id;
+	const isMyProfile = authUser.id === user?.id;
 	const memberSinceDate = formatMemberSinceDate(user?.createdAt);
-	const iAmFollowing = authUser.following.includes(user?._id);
+	const iAmFollowing = authUser.following.includes(user?.id);
 
-	const {mutateAsync:updateProfile, isPending:isUpdatingProfile} = useMutation({
+	const { mutateAsync: updateProfile, isPending: isUpdatingProfile } = useMutation({
 		mutationFn: async () => {
 			try {
 				const res = await fetch("/api/users/update", {
@@ -72,7 +72,7 @@ const ProfilePage = () => {
 				})
 
 				const data = await res.json();
-				if(!res.ok){
+				if (!res.ok) {
 					throw new Error(data.error || "Failed to update profile");
 				}
 				return data;
@@ -83,9 +83,9 @@ const ProfilePage = () => {
 		onSuccess: () => {
 			toast.success("Profile updated successfully");
 			Promise.all([
-				queryClient.invalidateQueries({queryKey: ["authUser"]}),
-				queryClient.invalidateQueries({queryKey: ["userProfile"]}),
-				queryClient.invalidateQueries({queryKey: ["posts"]})
+				queryClient.invalidateQueries({ queryKey: ["authUser"] }),
+				queryClient.invalidateQueries({ queryKey: ["userProfile"] }),
+				queryClient.invalidateQueries({ queryKey: ["posts"] })
 			])
 		},
 		onError: () => {
@@ -173,7 +173,7 @@ const ProfilePage = () => {
 								{!isMyProfile && (
 									<button
 										className='btn btn-outline rounded-full btn-sm'
-										onClick={() => followUnfollow(user?._id)}
+										onClick={() => followUnfollow(user?.id)}
 									>
 										{isPending && "Loading..."}
 										{!isPending && iAmFollowing && "Following"}
@@ -256,7 +256,7 @@ const ProfilePage = () => {
 						</>
 					)}
 
-					<Posts feedType={feedType} username={username} userId={user?._id} />
+					<Posts feedType={feedType} username={username} userId={user?.id} />
 				</div>
 			</div>
 		</>

@@ -3,7 +3,7 @@ import PostSkeleton from "../skeletons/PostSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-const Posts = ({feedType, username, userId}) => {
+const Posts = ({ feedType, username, userId }) => {
 	const getPostEndpoint = () => {
 		switch (feedType) {
 			case "forYou":
@@ -21,14 +21,14 @@ const Posts = ({feedType, username, userId}) => {
 
 	const POST_ENDPOINT = getPostEndpoint();
 
-	const {data:posts, isLoading, refetch, isRefetching} = useQuery({
+	const { data: posts, isLoading, refetch, isRefetching } = useQuery({
 		queryKey: ["posts"],
 		queryFn: async () => {
 			try {
 				const res = await fetch(POST_ENDPOINT);
 				const data = await res.json();
 
-				if(!res.ok){
+				if (!res.ok) {
 					throw new Error(data.error || "Failed to fetch posts");
 				}
 
@@ -56,7 +56,7 @@ const Posts = ({feedType, username, userId}) => {
 			{!isLoading && !isRefetching && posts && (
 				<div>
 					{posts.map((post) => (
-						<Post key={post._id} post={post} />
+						<Post key={post.id} post={post} />
 					))}
 				</div>
 			)}

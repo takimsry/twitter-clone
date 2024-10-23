@@ -11,36 +11,36 @@ export const signup = async (req, res) => {
       return res.status(400).json({ error: "Invalid email format" });
     }
 
-    const existingUser = await User.findOne({ username });
-    if(existingUser) {
+    const existingUser = await User.findOne({ where: { username } });
+    if (existingUser) {
       return res.status(400).json({ error: "Username is already taken" });
     }
 
-    const existingEmail = await User.findOne({ email });
-    if(existingEmail) {
+    const existingEmail = await User.findOne({ where: { email } });
+    if (existingEmail) {
       return res.status(400).json({ error: "Email is already taken" });
     }
 
-    if(password.length < 6) {
+    if (password.length < 6) {
       return res.status(400).json({ error: "Password must be at least 6 characters long" });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
+    const newUser = await User.create({
       username,
       fullname,
       email,
       password: hashedPassword,
     });
 
-    if(newUser) {
-      generateTokenAndSetCookie(newUser._id, res);
+    if (newUser) {
+      generateTokenAndSetCookie(newUser.id, res);
       await newUser.save();
 
       res.status(201).json({
-        _id: newUser._id,
+        id: newUser.id,
         username: newUser.username,
         fullname: newUser.fullname,
         email: newUser.email,
@@ -61,16 +61,16 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ where: { username } });
     const isPasswordCorrect = await bcrypt.compare(password, user?.password || "");
 
-    if(!user || !isPasswordCorrect) {
+    if (!user || !isPasswordCorrect) {
       return res.status(400).json({ error: "Invalid username or password" });
     }
 
-    generateTokenAndSetCookie(user._id, res);
+    generateTokenAndSetCookie(user.id, res);
     res.status(200).json({
-      _id: user._id,
+      id: user.id,
       username: user.username,
       fullname: user.fullname,
       email: user.email,
@@ -87,7 +87,7 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    res.cookie("jwt", "", {maxAge:0});
+    res.cookie("jwt", "", { maxAge: 0 });
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     console.log("Error in logout controller", error);
@@ -97,7 +97,9 @@ export const logout = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-password");
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ["password"]}
+    });
     res.status(200).json(user);
   } catch (error) {
     console.log("Error in getMe controller", error);

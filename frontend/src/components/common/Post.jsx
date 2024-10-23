@@ -12,24 +12,24 @@ import { formatPostDate } from "../../utils/date/formatDate";
 
 const Post = ({ post }) => {
 	const [comment, setComment] = useState("");
-	const {data: authUser} = useQuery({queryKey: ["authUser"]});
+	const { data: authUser } = useQuery({ queryKey: ["authUser"] });
 	const queryClient = useQueryClient();
 
 	const postOwner = post.user;
-	const isLiked = post.likes.includes(authUser._id);
-	const isMyPost = authUser._id === post.user._id;
+	const isLiked = post.likes.includes(authUser.id);
+	const isMyPost = authUser.id === post.user.id;
 	const formattedDate = formatPostDate(post.createdAt);
 
-	const {mutate: deletePost, isPending: isDeleting} = useMutation({
+	const { mutate: deletePost, isPending: isDeleting } = useMutation({
 		mutationFn: async () => {
 			try {
-				const res = await fetch(`/api/posts/${post._id}`, {
+				const res = await fetch(`/api/posts/${post.id}`, {
 					method: "DELETE"
 				});
 
 				const data = await res.json();
 
-				if(!res.ok) {
+				if (!res.ok) {
 					throw new Error(data.error || "Failed to delete post");
 				}
 				return data;
@@ -39,20 +39,20 @@ const Post = ({ post }) => {
 		},
 		onSuccess: () => {
 			toast.success("Post deleted successfully")
-			queryClient.invalidateQueries({queryKey: ["posts"]});
+			queryClient.invalidateQueries({ queryKey: ["posts"] });
 		}
 	});
 
-	const {mutate: likeUnlikePost, isPending:isLiking} = useMutation({
+	const { mutate: likeUnlikePost, isPending: isLiking } = useMutation({
 		mutationFn: async () => {
 			try {
-				const res = await fetch(`/api/posts/like/${post._id}`, {
+				const res = await fetch(`/api/posts/like/${post.id}`, {
 					method: "POST"
 				});
 
 				const data = await res.json();
 
-				if(!res.ok) {
+				if (!res.ok) {
 					throw new Error(data.error || "Failed to like post");
 				}
 				return data;
@@ -63,8 +63,8 @@ const Post = ({ post }) => {
 		onSuccess: (updatedLikes) => {
 			queryClient.setQueryData(["posts"], (oldData) => {
 				return oldData.map((p) => {
-					if(p._id === post._id) {
-						return {...p, likes:updatedLikes};
+					if (p.id === post.id) {
+						return { ...p, likes: updatedLikes };
 					}
 					return p;
 				})
@@ -75,20 +75,20 @@ const Post = ({ post }) => {
 		}
 	});
 
-	const {mutate: commentPost, isPending: isCommenting} = useMutation({
+	const { mutate: commentPost, isPending: isCommenting } = useMutation({
 		mutationFn: async () => {
 			try {
-				const res = await fetch(`/api/posts/comment/${post._id}`, {
+				const res = await fetch(`/api/posts/comment/${post.id}`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json"
 					},
-					body: JSON.stringify({ text: comment})
+					body: JSON.stringify({ text: comment })
 				});
 
 				const data = await res.json();
 
-				if(!res.ok) {
+				if (!res.ok) {
 					throw new Error(data.error || "Failed to comment post");
 				}
 				return data;
@@ -99,8 +99,8 @@ const Post = ({ post }) => {
 		onSuccess: (updatedComments) => {
 			queryClient.setQueryData(["posts"], (oldData) => {
 				return oldData.map((p) => {
-					if(p._id === post._id) {
-						return {...p, comments: updatedComments}
+					if (p.id === post.id) {
+						return { ...p, comments: updatedComments }
 					}
 					return p;
 				})
@@ -119,12 +119,12 @@ const Post = ({ post }) => {
 
 	const handlePostComment = (e) => {
 		e.preventDefault();
-		if(isCommenting) return;
+		if (isCommenting) return;
 		commentPost();
 	};
 
 	const handleLikePost = () => {
-		if(isLiking) return;
+		if (isLiking) return;
 		likeUnlikePost();
 	};
 
@@ -171,7 +171,7 @@ const Post = ({ post }) => {
 						<div className='flex gap-4 items-center w-2/3 justify-between'>
 							<div
 								className='flex gap-1 items-center cursor-pointer group'
-								onClick={() => document.getElementById("comments_modal" + post._id).showModal()}
+								onClick={() => document.getElementById("comments_modal" + post.id).showModal()}
 							>
 								<FaRegComment className='w-4 h-4  text-slate-500 group-hover:text-sky-400' />
 								<span className='text-sm text-slate-500 group-hover:text-sky-400'>
@@ -179,7 +179,7 @@ const Post = ({ post }) => {
 								</span>
 							</div>
 							{/* We're using Modal Component from DaisyUI */}
-							<dialog id={`comments_modal${post._id}`} className='modal border-none outline-none'>
+							<dialog id={`comments_modal${post.id}`} className='modal border-none outline-none'>
 								<div className='modal-box rounded border border-gray-600'>
 									<h3 className='font-bold text-lg mb-4'>COMMENTS</h3>
 									<div className='flex flex-col gap-3 max-h-60 overflow-auto'>
@@ -189,7 +189,7 @@ const Post = ({ post }) => {
 											</p>
 										)}
 										{post.comments.map((comment) => (
-											<div key={comment._id} className='flex gap-2 items-start'>
+											<div key={comment.id} className='flex gap-2 items-start'>
 												<div className='avatar'>
 													<div className='w-8 rounded-full'>
 														<img
