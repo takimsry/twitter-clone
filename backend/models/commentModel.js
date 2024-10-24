@@ -1,7 +1,5 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/connectDB.js';
-import Post from './postModel.js';
-import User from './userModel.js';
 
 const Comment = sequelize.define('Comment', {
   id: {
@@ -30,8 +28,5 @@ const Comment = sequelize.define('Comment', {
 }, {
   timestamps: true
 });
-
-Comment.belongsTo(Post, { foreignKey: 'post_id' });
-Comment.belongsTo(User, { foreignKey: 'user_id' });
 
 export default Comment;

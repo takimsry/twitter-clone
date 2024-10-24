@@ -1,7 +1,5 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/connectDB.js';
-import Post from './postModel.js';
-import User from './userModel.js';
 
 const LikedPost = sequelize.define('LikedPost', {
   id: {
@@ -26,8 +24,5 @@ const LikedPost = sequelize.define('LikedPost', {
 }, {
   timestamps: true
 });
-
-LikedPost.belongsTo(Post, { foreignKey: 'post_id' });
-LikedPost.belongsTo(User, { foreignKey: 'user_id' });
 
 export default LikedPost;

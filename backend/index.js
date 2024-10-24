@@ -7,13 +7,7 @@ import userRoutes from './routes/userRoute.js';
 import notificationRoutes from './routes/notificationRoute.js';
 import {v2 as cloudinary} from 'cloudinary';
 import { connectDB, sequelize } from './db/connectDB.js';
-
-import Comment from './models/commentModel.js';
-import Follow from './models/followModel.js';
-import LikedPost from './models/likedPostModel.js';
-import Notification from './models/notificationModel.js';
-import Post from './models/postModel.js';
-import User from './models/userModel.js';
+import { initModels } from './lib/utils/initModels.js';
 
 dotenv.config();
 
@@ -37,6 +31,7 @@ app.use("/api/notifications", notificationRoutes);
 
 const startServer = async () => {
   await connectDB();
+  initModels();
   // await sequelize.sync();
   app.listen(PORT, () => {
     console.log(`Server started on http://localhost:${PORT}/`);    

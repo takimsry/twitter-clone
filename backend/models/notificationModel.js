@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/connectDB.js';
-import User from './userModel.js';
 
 const Notification = sequelize.define('Notification', {
   id: {
@@ -36,9 +35,5 @@ const Notification = sequelize.define('Notification', {
 }, {
   timestamps: true
 });
-
-Notification.belongsTo(User, { foreignKey: 'from_user_id' });
-Notification.belongsTo(User, { foreignKey: 'to_user_id' });
-
 
 export default Notification;

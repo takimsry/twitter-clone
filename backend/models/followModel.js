@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/connectDB.js';
-import User from './userModel.js';
 
 const Follow = sequelize.define('Follow', {
   id: {
@@ -25,8 +24,5 @@ const Follow = sequelize.define('Follow', {
 }, {
   timestamps: true
 });
-
-Follow.belongsTo(User, { foreignKey: 'from_user_id' });
-Follow.belongsTo(User, { foreignKey: 'to_user_id' });
 
 export default Follow;

@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/connectDB.js';
-import User from './userModel.js';
 
 const Post = sequelize.define('Post', {
   id: {
@@ -26,7 +25,5 @@ const Post = sequelize.define('Post', {
 }, {
   timestamps: true
 });
-
-Post.belongsTo(User, { foreignKey: 'user_id' });
 
 export default Post;
