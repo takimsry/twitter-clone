@@ -1,13 +1,19 @@
 import bcrypt from "bcryptjs/dist/bcrypt.js";
 import Notification from "../models/notificationModel.js";
 import User from "../models/userModel.js";
+import Follow from "../models/followModel.js";
 import {v2 as cloudinary} from "cloudinary";
+import { Op } from "sequelize";
+import { sequelize } from "../db/connectDB.js";
 
 export const getUserProfile = async (req, res) => {
   const { username } = req.params;
 
   try {
-    const user = await User.findOne({ username }).select("-password");
+    const user = await User.findOne({
+      where: { username },
+      attributes: { exclude: ["password"] }
+    });
     if(!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -21,33 +27,55 @@ export const getUserProfile = async (req, res) => {
 export const followUnfollowUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const userToModify = await User.findById(id);
-    const currentUser = await User.findById(req.user._id);
+    const userToFollow = await User.findByPk(id);
+    const currentUser = await User.findByPk(req.user.id);
 
-    if(id === req.user._id.toString()) {
+    if(id === req.user.id.toString()) {
       return res.status(400).json({ error: "You cannot follow/unfollow yourself" });
     }
 
-    if(!userToModify || !currentUser) {
+    // can be changed with uuid validator
+    if(!userToFollow || !currentUser) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const isFollowing = currentUser.following.includes(id);
+    const isFollowing = await Follow.findOne({
+      where: {
+        from_user_id: req.user.id,
+        to_user_id: id
+      }
+    });
+
+    console.log(isFollowing);
 
     if(isFollowing){
-      await User.findByIdAndUpdate(id, { $pull: { followers: req.user._id } });
-      await User.findByIdAndUpdate(req.user._id, { $pull: { following: id }})
+      await Follow.destroy({
+        where: {
+          from_user_id: req.user.id,
+          to_user_id: id
+        }
+      });
+
+      await Notification.destroy({
+        where: {
+          from_user_id: req.user.id,
+          to_user_id: id,
+          type: "follow"
+        }
+      })
+
       res.status(200).json({ message: "User unfollowed successfully" });
     } else {
-      await User.findByIdAndUpdate(id, { $push: { followers: req.user._id } });
-      await User.findByIdAndUpdate(req.user._id, { $push: { following: id }})
-      
-      const newNotification = new Notification({
-        type: "follow",
-        from: req.user._id,
-        to: userToModify._id
+      await Follow.create({
+        from_user_id: req.user.id,
+        to_user_id: id
       });
-      await newNotification.save();
+
+      await Notification.create({
+        from_user_id: req.user.id,
+        to_user_id: id,
+        type: "follow"
+      });
 
       res.status(200).json({ message: "User followed successfully" });
     }
@@ -59,23 +87,27 @@ export const followUnfollowUser = async (req, res) => {
 
 export const getSuggestedUsers = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const usersFollowedByMe = await User.findById(userId).select("following");
-    const suggestedUsers = await User.aggregate([
-      {
-        $match:{
-          _id: {$ne: userId},
-          _id: {$nin: usersFollowedByMe.following}
+    const userId = req.user.id;
+
+    const usersFollowedByMe = await Follow.findAll({
+      attributes: ["to_user_id"],
+      where: {
+        from_user_id: userId
+      }
+    });
+    const followedUsersIds = usersFollowedByMe.map((follow) => follow.to_user_id);
+
+    const suggestedUsers = await User.findAll({
+      attributes: ["id", "username", "fullname", "profileImg"],
+      where: {
+        id: {
+          [Op.ne]: userId,
+          [Op.notIn]: followedUsersIds
         }
       },
-      {$sample: {size: 4}},
-      {$project: {
-        _id: 1,
-        username: 1,
-        fullname: 1,
-        profileImg: 1
-      }}
-    ]);
+      limit: 4,
+      order: sequelize.random()
+    })
 
     res.status(200).json(suggestedUsers);
   } catch (error) {
@@ -88,10 +120,10 @@ export const updateUser = async (req, res) => {
   const { username, fullname, email, currentPassword, newPassword, bio, link } = req.body;
   let { profileImg, coverImg } = req.body;
 
-  const userId = req.user._id;
+  const userId = req.user.id;
   
   try {
-    let user = await User.findById(userId);
+    let user = await User.findByPk(userId);
 
     if(!user) {
       res.status(404).json({ error: "User not found" });
@@ -142,7 +174,7 @@ export const updateUser = async (req, res) => {
 
     user = await user.save();
 
-    user = user.toObject();
+    user = user.toJSON();
     delete user.password;
 
     return res.status(200).json(user);
