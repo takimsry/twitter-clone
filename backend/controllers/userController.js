@@ -13,37 +13,32 @@ export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findOne({
       where: { username },
-      attributes: { exclude: ["password"] }
-    });
+      attributes: { exclude: ["password"] },
+      include: [
+        {
+          model: Follow,
+          as: "Followers",
+          attributes: ["from_user_id"]
+        },
+        {
+          model: Follow,
+          as: "Following",
+          attributes: ["to_user_id"]
+        },
+        {
+          model: LikedPost,
+          attributes: ["post_id"]
+        }
+      ]
+    })
 
     if(!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const userFollowers = await Follow.findAll({
-      where: {
-        to_user_id: user.id
-      },
-      attributes: ["from_user_id"]
-    });
-
-    const userFollowing = await Follow.findAll({
-      where: {
-        from_user_id: user.id
-      },
-      attributes: ["to_user_id"]
-    });
-
-    const userLikedPosts = await LikedPost.findAll({
-      where: {
-        user_id: user.id
-      },
-      attributes: ["post_id"]
-    });
-
-    const followers = userFollowers.map(follower => follower.from_user_id);
-    const following = userFollowing.map(following => following.to_user_id);
-    const likedPosts = userLikedPosts.map(likedPost => likedPost.post_id);
+    const followers = user.Followers.map(follower => follower.from_user_id);
+    const following = user.Following.map(following => following.to_user_id);
+    const likedPosts = user.LikedPosts.map(likedPost => likedPost.post_id);
 
     const formattedUser = {
       id: user.id,

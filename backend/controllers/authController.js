@@ -98,25 +98,23 @@ export const logout = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: { exclude: ["password"]}
+      attributes: { exclude: ["password"]},
+      include: [
+        {
+          model: Follow,
+          as: "Followers",
+          attributes: ["from_user_id"]
+        },
+        {
+          model: Follow,
+          as: "Following",
+          attributes: ["to_user_id"]
+        }
+      ]
     });
 
-    const userFollowers = await Follow.findAll({
-      where: {
-        to_user_id: user.id
-      },
-      attributes: ["from_user_id"]
-    });
-
-    const userFollowing = await Follow.findAll({
-      where: {
-        from_user_id: user.id
-      },
-      attributes: ["to_user_id"]
-    });
-
-    const followers = userFollowers.map(follower => follower.from_user_id);
-    const following = userFollowing.map(following => following.to_user_id);
+    const followers = user.Followers.map(follower => follower.from_user_id);
+    const following = user.Following.map(following => following.to_user_id);
 
     const formattedUser = {
       id: user.id,
