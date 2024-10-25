@@ -16,11 +16,17 @@ export const initModels = () => {
 
   Follow.belongsTo(User, { foreignKey: 'from_user_id' });
   Follow.belongsTo(User, { foreignKey: 'to_user_id' });
-  LikedPost.belongsTo(Post, { foreignKey: 'post_id' });
+  
   LikedPost.belongsTo(User, { foreignKey: 'user_id' });
+  LikedPost.belongsTo(Post, { foreignKey: 'post_id' });
+
   Post.belongsTo(User, { foreignKey: 'user_id' });
+  Post.hasMany(LikedPost, { foreignKey: 'post_id' });
+  Post.hasMany(Comment, { foreignKey: 'post_id' });
+
   Comment.belongsTo(Post, { foreignKey: 'post_id' });
   Comment.belongsTo(User, { foreignKey: 'user_id' });
+
   Notification.belongsTo(User, { foreignKey: 'from_user_id' });
   Notification.belongsTo(User, { foreignKey: 'to_user_id' });
 };
