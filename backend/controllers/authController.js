@@ -1,4 +1,5 @@
 import { generateTokenAndSetCookie } from "../lib/utils/generateToken.js";
+import Follow from "../models/followModel.js";
 import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 
@@ -99,7 +100,36 @@ export const getMe = async (req, res) => {
     const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ["password"]}
     });
-    res.status(200).json(user);
+
+    const userFollowers = await Follow.findAll({
+      where: {
+        to_user_id: user.id
+      },
+      attributes: ["from_user_id"]
+    });
+
+    const userFollowing = await Follow.findAll({
+      where: {
+        from_user_id: user.id
+      },
+      attributes: ["to_user_id"]
+    });
+
+    const followers = userFollowers.map(follower => follower.from_user_id);
+    const following = userFollowing.map(following => following.to_user_id);
+
+    const formattedUser = {
+      id: user.id,
+      username: user.username,
+      fullname: user.fullname,
+      email: user.email,
+      followers,
+      following,
+      profileImg: user.profileImg,
+      coverImg: user.coverImg
+    }
+
+    res.status(200).json(formattedUser);
   } catch (error) {
     console.log("Error in getMe controller", error);
     res.status(500).json({ error: "Internal server error" });

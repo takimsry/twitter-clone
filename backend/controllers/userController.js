@@ -5,6 +5,7 @@ import Follow from "../models/followModel.js";
 import {v2 as cloudinary} from "cloudinary";
 import { Op } from "sequelize";
 import { sequelize } from "../db/connectDB.js";
+import LikedPost from "../models/likedPostModel.js";
 
 export const getUserProfile = async (req, res) => {
   const { username } = req.params;
@@ -14,10 +15,53 @@ export const getUserProfile = async (req, res) => {
       where: { username },
       attributes: { exclude: ["password"] }
     });
+
     if(!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    res.status(200).json(user);
+
+    const userFollowers = await Follow.findAll({
+      where: {
+        to_user_id: user.id
+      },
+      attributes: ["from_user_id"]
+    });
+
+    const userFollowing = await Follow.findAll({
+      where: {
+        from_user_id: user.id
+      },
+      attributes: ["to_user_id"]
+    });
+
+    const userLikedPosts = await LikedPost.findAll({
+      where: {
+        user_id: user.id
+      },
+      attributes: ["post_id"]
+    });
+
+    const followers = userFollowers.map(follower => follower.from_user_id);
+    const following = userFollowing.map(following => following.to_user_id);
+    const likedPosts = userLikedPosts.map(likedPost => likedPost.post_id);
+
+    const formattedUser = {
+      id: user.id,
+      username: user.username,
+      fullname: user.fullname,
+      email: user.email,
+      followers,
+      following,
+      profileImg: user.profileImg,
+      coverImg: user.coverImg,
+      bio: user.bio,
+      link: user.link,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      likedPosts
+    }
+
+    res.status(200).json(formattedUser);
   } catch (error) {
     console.log("Error in getUserProfile controller", error);
     res.status(500).json({ error: "Internal server error" });
