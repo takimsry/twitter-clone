@@ -1,35 +1,38 @@
+import { Op } from "sequelize";
+import Comment from "../models/commentModel.js";
+import LikedPost from "../models/likedPostModel.js";
 import Notification from "../models/notificationModel.js";
 import Post from "../models/postModel.js";
 import User from "../models/userModel.js";
-import {v2 as cloudinary} from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
+import Follow from "../models/followModel.js";
 
 export const createPost = async (req, res) => {
   try {
     const { text } = req.body;
     let { img } = req.body;
-    const userId = req.user._id.toString();
+    const userId = req.user.id.toString();
 
-    const user = await User.findById(userId);
-    if(!user) {
+    const user = await User.findByPk(userId);
+    if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if(!text && !img) {
+    if (!text && !img) {
       return res.status(400).json({ error: "Please provide text or image" });
     }
 
-    if(img) {
+    if (img) {
       const uploadedResponse = await cloudinary.uploader.upload(img);
       img = uploadedResponse.secure_url;
     }
 
-    const newPost =  new Post({
-      user: userId,
+    const newPost = await Post.create({
+      user_id: userId,
       text,
       img
     });
 
-    await newPost.save();
     res.status(201).json(newPost);
   } catch (error) {
     console.log("Error in createPost controller", error);
@@ -39,21 +42,21 @@ export const createPost = async (req, res) => {
 
 export const deletePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
-    if(!post) {
+    const post = await Post.findByPk(req.params.id);
+    if (!post) {
       return res.status(404).json({ error: "Post not found" });
     }
 
-    if(post.user.toString() !== req.user._id.toString()) {
+    if (post.user_id.toString() !== req.user.id.toString()) {
       return res.status(401).json({ error: "You are not authorized to delete this post" });
     }
 
-    if(post.img) {
+    if (post.img) {
       const imgId = post.img.split("/").pop().split(".")[0];
       await cloudinary.uploader.destroy(imgId);
     }
 
-    await Post.findByIdAndDelete(req.params.id);
+    await Post.destroy({ where: { id: req.params.id } });
 
     res.status(200).json({ message: "Post deleted successfully" });
   } catch (error) {
@@ -66,29 +69,45 @@ export const commentOnPost = async (req, res) => {
   try {
     const { text } = req.body;
     const postId = req.params.id;
-    const userId = req.user._id;
+    const userId = req.user.id;
 
-    if(!text) {
+    if (!text) {
       return res.status(400).json({ error: "Please provide text" });
     }
 
-    const post = await Post.findById(postId);
-    if(!post) {
+    const post = await Post.findByPk(postId);
+    if (!post) {
       return res.status(404).json({ error: "Post not found" });
     }
 
-    const comment = {user: userId, text};
+    await Comment.create({
+      post_id: postId,
+      user_id: userId,
+      text
+    })
 
-    post.comments.push(comment);
-    await post.save();
-
-    const updatedPost = await post.populate({
-      path: "comments.user",
-      select: "_id username fullname profileImg"
+    const updatedComments = await Comment.findAll({
+      include: {
+        model: User,
+        attributes: ["id", "username", "fullname", "profileImg"]
+      },
+      where: { post_id: postId}
     });
 
-    const updatedComments = updatedPost.comments;
-    res.status(200).json(updatedComments);
+    const formattedUpdatedComments = updatedComments.map(comment => {
+      return {
+        id: comment.id,
+        text: comment.text,
+        user: {
+          id: comment.User.id,
+          username: comment.User.username,
+          fullname: comment.User.fullname,
+          profileImg: comment.User.profileImg
+        }
+      }
+    })
+
+    res.status(200).json(formattedUpdatedComments);
   } catch (error) {
     console.log("Error in commentOnPost controller", error);
     res.status(500).json({ error: "Internal server error" });
@@ -97,43 +116,74 @@ export const commentOnPost = async (req, res) => {
 
 export const likeUnlikePost = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const postId = req.params.id;
 
-    const post = await Post.findById(postId);
+    const post = await Post.findByPk(postId);
 
-    if(!post){
+    if (!post) {
       return res.status(404).json({ error: "Post not found" });
     }
 
-    const userLikedPost = post.likes.includes(userId);
-    if(userLikedPost){
-      await Post.updateOne({_id: postId}, {$pull: {likes: userId}});
-      await User.updateOne({_id: userId}, {$pull: {likedPosts: postId}});
+    const userLikedPost = await LikedPost.findOne({
+      where: {
+        post_id: postId,
+        user_id: userId
+      }
+    });
 
-      if(post.user.toString() !== userId.toString()){
-        await Notification.deleteOne({from: userId, to: post.user, type: "like"});
+    if (userLikedPost) {
+      await LikedPost.destroy({ 
+        where: { 
+          user_id: userId, 
+          post_id: postId 
+        } 
+      });
+
+      if (post.user_id !== userId) {
+        await Notification.destroy({
+          where: {
+            from_user_id: userId,
+            to_user_id: post.user_id,
+            type: "like"
+          }
+        });
       }
 
-      const updatedLikes = post.likes.filter((id) => id.toString() !== userId.toString());
-      res.status(200).json(updatedLikes);
+      const updatedLikes = await LikedPost.findAll({
+        attributes: ["user_id"],
+        where: {
+          post_id: postId
+        },
+      });
+
+      const formattedUpdatedLikes = updatedLikes.map(like => like.user_id);
+
+      res.status(200).json(formattedUpdatedLikes);
     } else {
-      post.likes.push(userId);
-      await post.save();
-      await User.updateOne({_id: userId}, {$push: {likedPosts: postId}});
+      await LikedPost.create({
+        post_id: postId,
+        user_id: userId
+      });
       
-      if(post.user.toString() !== userId.toString()){
-        const notification = new Notification({
-          from: userId,
-          to: post.user,
+      if (post.user_id !== userId) {
+        await Notification.create({
+          from_user_id: userId,
+          to_user_id: post.user_id,
           type: "like"
         });
-
-        await notification.save();
       }
 
-      const updatedLikes = post.likes;
-      res.status(200).json(updatedLikes);
+      const updatedLikes = await LikedPost.findAll({
+        attributes: ["user_id"],
+        where: {
+          post_id: postId
+        }
+      });
+
+      const formattedUpdatedLikes = updatedLikes.map(like => like.user_id);
+
+      res.status(200).json(formattedUpdatedLikes);
     }
   } catch (error) {
     console.log("Error in likeUnlikePost controller", error);
@@ -143,21 +193,63 @@ export const likeUnlikePost = async (req, res) => {
 
 export const getAllPosts = async (req, res) => {
   try {
-    const posts = await Post.find()
-    .sort({ createdAt: -1})
-    .populate({
-      path: "user",
-      select: "_id username fullname profileImg"
-    }).populate({
-      path: "comments.user",
-      select: "_id username fullname profileImg"
-    })
+    const posts = await Post.findAll({
+      include: [
+        {
+          model: User,
+          attributes: ["id", "username", "fullname", "profileImg"]
+        },
+        {
+          model: LikedPost,
+          attributes: ["user_id"]
+        },
+        {
+          model: Comment,
+          attributes: ["id", "text"],
+          include: {
+            model: User,
+            attributes: ["id", "username", "fullname", "profileImg"]
+          }
+        }
+      ],
+      order: [["createdAt", "DESC"]]
+    });
 
-    if(posts.length === 0) {
+    if (posts.length === 0) {
       return res.status(200).json([]);
     }
 
-    res.status(200).json(posts);    
+    const formattedPosts = posts.map(post => {
+      const likes = post.LikedPosts.map(like => like.user_id);
+      const comments = post.Comments.map(comment => ({
+        id: comment.id,
+        text: comment.text,
+        user: {
+          id: comment.User.id,
+          username: comment.User.username,
+          fullname: comment.User.fullname,
+          profileImg: comment.User.profileImg
+        }
+      }));
+
+      return {
+        id: post.id,
+        user: {
+          id: post.User.id,
+          username: post.User.username,
+          fullname: post.User.fullname,
+          profileImg: post.User.profileImg
+        },
+        text: post.text,
+        img: post.img,
+        likes,
+        comments,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt
+      }
+    });
+
+    res.status(200).json(formattedPosts);
   } catch (error) {
     console.log("Error in getAllPosts controller", error);
     res.status(500).json({ error: "Internal server error" });
@@ -167,22 +259,77 @@ export const getAllPosts = async (req, res) => {
 export const getLikedPosts = async (req, res) => {
   try {
     const userId = req.params.id;
-    const user = await User.findById(userId);
-    if(!user) {
+    const user = await User.findByPk(userId);
+    if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const likedPosts = await Post.find({_id: {$in: user.likedPosts}})
-    .sort({ createdAt: -1})
-    .populate({
-      path: "user",
-      select: "_id username fullname profileImg"
-    }).populate({
-      path: "comments.user",
-      select: "_id username fullname profileImg"
+    const idLikedPosts = await LikedPost.findAll({
+      attributes: ["post_id"],
+      where: {
+        user_id: userId
+      }
+    });
+    const formattedIdLikedPosts = idLikedPosts.map(post => post.post_id);
+
+    const likedPosts = await Post.findAll({
+      where: {
+        id: {
+          [Op.in]: formattedIdLikedPosts
+        }
+      },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "username", "fullname", "profileImg"]
+        },
+        {
+          model: LikedPost,
+          attributes: ["user_id"]
+        },
+        {
+          model: Comment,
+          attributes: ["id", "text"],
+          include: {
+            model: User,
+            attributes: ["id", "username", "fullname", "profileImg"]
+          }
+        }
+      ],
+      order: [["createdAt", "DESC"]]
     });
 
-    res.status(200).json(likedPosts);
+    const formattedLikedPosts = likedPosts.map(post => {
+      const likes = post.LikedPosts.map(like => like.user_id);
+      const comments = post.Comments.map(comment => ({
+        id: comment.id,
+        text: comment.text,
+        user: {
+          id: comment.User.id,
+          username: comment.User.username,
+          fullname: comment.User.fullname,
+          profileImg: comment.User.profileImg
+        }
+      }));
+
+      return {
+        id: post.id,
+        user: {
+          id: post.User.id,
+          username: post.User.username,
+          fullname: post.User.fullname,
+          profileImg: post.User.profileImg
+        },
+        text: post.text,
+        img: post.img,
+        likes,
+        comments,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt
+      }
+    });
+
+    res.status(200).json(formattedLikedPosts);
   } catch (error) {
     console.log("Error in getLikedPosts controller", error);
     res.status(500).json({ error: "Internal server error" });
@@ -191,25 +338,78 @@ export const getLikedPosts = async (req, res) => {
 
 export const getFollowingPosts = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const user = await User.findById(userId);
-    if(!user) {
+    const userId = req.user.id;
+    const user = await User.findByPk(userId);
+    if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const following = user.following;
-    const followingPosts = await Post.find({user: {$in: following}})
-    .sort({createdAt: -1})
-    .populate({
-      path: "user",
-      select: "_id username fullname profileImg"
-    })
-    .populate({
-      path: "comments.user",
-      select: "_id username fullname profileImg"
+    const idFollowing = await Follow.findAll({
+      attributes: ["to_user_id"],
+      where: {
+        from_user_id: userId
+      }
+    });
+    const formattedIdFollowing = idFollowing.map(following => following.to_user_id);
+
+    const followingPosts = await Post.findAll({
+      where: {
+        user_id: {
+          [Op.in]: formattedIdFollowing
+        }
+      },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "username", "fullname", "profileImg"]
+        },
+        {
+          model: LikedPost,
+          attributes: ["user_id"]
+        },
+        {
+          model: Comment,
+          attributes: ["id", "text"],
+          include: {
+            model: User,
+            attributes: ["id", "username", "fullname", "profileImg"]
+          }
+        }
+      ],
+      order: [["createdAt", "DESC"]]
     });
 
-    res.status(200).json(followingPosts);
+    const formattedFollowingPosts = followingPosts.map(post => {
+      const likes = post.LikedPosts.map(like => like.user_id);
+      const comments = post.Comments.map(comment => ({
+        id: comment.id,
+        text: comment.text,
+        user: {
+          id: comment.User.id,
+          username: comment.User.username,
+          fullname: comment.User.fullname,
+          profileImg: comment.User.profileImg
+        }
+      }));
+
+      return {
+        id: post.id,
+        user: {
+          id: post.User.id,
+          username: post.User.username,
+          fullname: post.User.fullname,
+          profileImg: post.User.profileImg
+        },
+        text: post.text,
+        img: post.img,
+        likes,
+        comments,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt
+      }
+    });
+
+    res.status(200).json(formattedFollowingPosts);
   } catch (error) {
     console.log("Error in getFollowingPosts controller", error);
     res.status(500).json({ error: "Internal server error" });
@@ -220,25 +420,68 @@ export const getUserPosts = async (req, res) => {
   try {
     const { username } = req.params;
 
-    const user = await User.findOne({username});
-    if(!user){
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const posts = await Post.find({user: user._id})
-    .sort({ createdAt: -1})
-    .populate({
-      path: "user",
-      select: "_id username fullname profileImg"
-    })
-    .populate({
-      path: "comments.user",
-      select: "_id username fullname profileImg"
+    const userPosts = await Post.findAll({
+      where: { user_id: user.id },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "username", "fullname", "profileImg"]
+        },
+        {
+          model: LikedPost,
+          attributes: ["user_id"]
+        },
+        {
+          model: Comment,
+          attributes: ["id", "text"],
+          include: {
+            model: User,
+            attributes: ["id", "username", "fullname", "profileImg"]
+          }
+        }
+      ],
+      order: [["createdAt", "DESC"]]
     });
 
-    res.status(200).json(posts);
+    const formattedUserPosts = userPosts.map(post => {
+      const likes = post.LikedPosts.map(like => like.user_id);
+      const comments = post.Comments.map(comment => ({
+        id: comment.id,
+        text: comment.text,
+        user: {
+          id: comment.User.id,
+          username: comment.User.username,
+          fullname: comment.User.fullname,
+          profileImg: comment.User.profileImg
+        }
+      }));
+
+      return {
+        id: post.id,
+        user: {
+          id: post.User.id,
+          username: post.User.username,
+          fullname: post.User.fullname,
+          profileImg: post.User.profileImg
+        },
+        text: post.text,
+        img: post.img,
+        likes,
+        comments,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt
+      }
+    });
+
+    res.status(200).json(formattedUserPosts);
   } catch (error) {
     console.log("Error in getUserPosts controller", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
+// i think the repeating formatting and include can be simplified and optimized by using a common function like utils or something
