@@ -2,6 +2,11 @@
 
 A Full Stack Twitter Clone built with React.js and React Query on the Front-End and Express.js with PostgreSQL and Sequelize on the Back-End. This project simulates core Twitter features, allowing users to post tweets, like, follow, and engage in a real-time feed. The Back-End also includes an earlier version using MongoDB and Mongoose.
 
+## Screenshots
+
+![Screenshot1](./frontend/public/screenshots/twitterclone1.png)
+![Screenshot2](./frontend/public/screenshots/twitterclone2.png)
+
 ## Features
 
 - User Authentication (JWT-based)
@@ -116,8 +121,3 @@ The Front-End will run on `http://localhost:5000`.
 
 - `npm run dev`: Start the Back-End server with `nodemon` for hot-reloading in development
 - `npm start`: Start the Back-End server in production mode
-
-## Screenshots
-
-![Screenshot1](./frontend/public/screenshots/twitterclone1.png)
-![Screenshot2](./frontend/public/screenshots/twitterclone2.png)
