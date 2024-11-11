@@ -6,6 +6,7 @@ A Full Stack Twitter Clone built with React.js and React Query on the Front-End 
 
 ![Screenshot1](./frontend/public/screenshots/twitterclone1.png)
 ![Screenshot2](./frontend/public/screenshots/twitterclone2.png)
+![Screenshot3](./frontend/public/screenshots/twitterclone3.png)
 
 ## Features
 
