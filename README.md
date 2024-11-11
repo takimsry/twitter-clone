@@ -72,6 +72,9 @@ Create an `.env` file in the `backend` directory and configure the following env
 # PostgreSQL Database Configuration
 POSTGRES_URI=your_postgresql_database_url
 
+# MongoDB Database Configuration
+MONGO_URI=your_mongodb_database_url
+
 # JWT Secret
 JWT_SECRET=your_jwt_secret
 
@@ -97,6 +100,12 @@ npm run dev
 
 # Production mode
 npm start
+```
+
+NOTE: If you want to run it with the `MongoDB` version, you need to checkout to that version first before starting the server:
+
+```bash
+git checkout 455515c
 ```
 
 The server will run on `http://localhost:3000`.
