@@ -6,6 +6,7 @@ import Post from "../models/postModel.js";
 import User from "../models/userModel.js";
 import { v2 as cloudinary } from "cloudinary";
 import Follow from "../models/followModel.js";
+import { formatPosts } from "../lib/utils/formatPosts.js";
 
 export const createPost = async (req, res) => {
   try {
@@ -219,35 +220,7 @@ export const getAllPosts = async (req, res) => {
       return res.status(200).json([]);
     }
 
-    const formattedPosts = posts.map(post => {
-      const likes = post.LikedPosts.map(like => like.user_id);
-      const comments = post.Comments.map(comment => ({
-        id: comment.id,
-        text: comment.text,
-        user: {
-          id: comment.User.id,
-          username: comment.User.username,
-          fullname: comment.User.fullname,
-          profileImg: comment.User.profileImg
-        }
-      }));
-
-      return {
-        id: post.id,
-        user: {
-          id: post.User.id,
-          username: post.User.username,
-          fullname: post.User.fullname,
-          profileImg: post.User.profileImg
-        },
-        text: post.text,
-        img: post.img,
-        likes,
-        comments,
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt
-      }
-    });
+    const formattedPosts = formatPosts(posts);
 
     res.status(200).json(formattedPosts);
   } catch (error) {
@@ -299,35 +272,7 @@ export const getLikedPosts = async (req, res) => {
       order: [["createdAt", "DESC"]]
     });
 
-    const formattedLikedPosts = likedPosts.map(post => {
-      const likes = post.LikedPosts.map(like => like.user_id);
-      const comments = post.Comments.map(comment => ({
-        id: comment.id,
-        text: comment.text,
-        user: {
-          id: comment.User.id,
-          username: comment.User.username,
-          fullname: comment.User.fullname,
-          profileImg: comment.User.profileImg
-        }
-      }));
-
-      return {
-        id: post.id,
-        user: {
-          id: post.User.id,
-          username: post.User.username,
-          fullname: post.User.fullname,
-          profileImg: post.User.profileImg
-        },
-        text: post.text,
-        img: post.img,
-        likes,
-        comments,
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt
-      }
-    });
+    const formattedLikedPosts = formatPosts(likedPosts);
 
     res.status(200).json(formattedLikedPosts);
   } catch (error) {
@@ -379,35 +324,7 @@ export const getFollowingPosts = async (req, res) => {
       order: [["createdAt", "DESC"]]
     });
 
-    const formattedFollowingPosts = followingPosts.map(post => {
-      const likes = post.LikedPosts.map(like => like.user_id);
-      const comments = post.Comments.map(comment => ({
-        id: comment.id,
-        text: comment.text,
-        user: {
-          id: comment.User.id,
-          username: comment.User.username,
-          fullname: comment.User.fullname,
-          profileImg: comment.User.profileImg
-        }
-      }));
-
-      return {
-        id: post.id,
-        user: {
-          id: post.User.id,
-          username: post.User.username,
-          fullname: post.User.fullname,
-          profileImg: post.User.profileImg
-        },
-        text: post.text,
-        img: post.img,
-        likes,
-        comments,
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt
-      }
-    });
+    const formattedFollowingPosts = formatPosts(followingPosts);
 
     res.status(200).json(formattedFollowingPosts);
   } catch (error) {
@@ -448,35 +365,7 @@ export const getUserPosts = async (req, res) => {
       order: [["createdAt", "DESC"]]
     });
 
-    const formattedUserPosts = userPosts.map(post => {
-      const likes = post.LikedPosts.map(like => like.user_id);
-      const comments = post.Comments.map(comment => ({
-        id: comment.id,
-        text: comment.text,
-        user: {
-          id: comment.User.id,
-          username: comment.User.username,
-          fullname: comment.User.fullname,
-          profileImg: comment.User.profileImg
-        }
-      }));
-
-      return {
-        id: post.id,
-        user: {
-          id: post.User.id,
-          username: post.User.username,
-          fullname: post.User.fullname,
-          profileImg: post.User.profileImg
-        },
-        text: post.text,
-        img: post.img,
-        likes,
-        comments,
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt
-      }
-    });
+    const formattedUserPosts = formatPosts(userPosts);
 
     res.status(200).json(formattedUserPosts);
   } catch (error) {
@@ -484,4 +373,3 @@ export const getUserPosts = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 }
-// i think the repeating formatting and include can be simplified and optimized by using a common function like utils or something

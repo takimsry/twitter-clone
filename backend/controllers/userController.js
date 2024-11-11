@@ -73,7 +73,6 @@ export const followUnfollowUser = async (req, res) => {
       return res.status(400).json({ error: "You cannot follow/unfollow yourself" });
     }
 
-    // can be changed with uuid validator
     if(!userToFollow || !currentUser) {
       return res.status(404).json({ error: "User not found" });
     }

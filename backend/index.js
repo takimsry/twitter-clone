@@ -32,7 +32,7 @@ app.use("/api/notifications", notificationRoutes);
 const startServer = async () => {
   await connectDB();
   initModels();
-  // await sequelize.sync();
+  await sequelize.sync();
   app.listen(PORT, () => {
     console.log(`Server started on http://localhost:${PORT}/`);    
   })
