@@ -57,6 +57,8 @@ export const deletePost = async (req, res) => {
       await cloudinary.uploader.destroy(imgId);
     }
 
+    await Comment.destroy({ where: { post_id: req.params.id } });
+    await LikedPost.destroy({ where: { post_id: req.params.id } });
     await Post.destroy({ where: { id: req.params.id } });
 
     res.status(200).json({ message: "Post deleted successfully" });
