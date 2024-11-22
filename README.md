@@ -44,7 +44,7 @@ Make sure you have the following installed:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/twitter-clone.git
+   git clone https://github.com/takimsry/twitter-clone.git
    cd twitter-clone
    ```
 
