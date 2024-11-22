@@ -1,10 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import authRoutes from './routes/authRoute.js';
-import postRoutes from './routes/postRoute.js';
-import userRoutes from './routes/userRoute.js';
-import notificationRoutes from './routes/notificationRoute.js';
+import authRoute from './routes/authRoute.js';
+import postRoute from './routes/postRoute.js';
+import userRoute from './routes/userRoute.js';
+import notificationRoute from './routes/notificationRoute.js';
 import {v2 as cloudinary} from 'cloudinary';
 import { connectDB, sequelize } from './db/connectDB.js';
 import { initModels } from './lib/utils/initModels.js';
@@ -24,10 +24,10 @@ app.use(express.json({limit:"5mb"}));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/posts", postRoutes);
-app.use("/api/notifications", notificationRoutes);
+app.use("/api/auth", authRoute);
+app.use("/api/users", userRoute);
+app.use("/api/posts", postRoute);
+app.use("/api/notifications", notificationRoute);
 
 const startServer = async () => {
   await connectDB();
