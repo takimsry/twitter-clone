@@ -218,10 +218,6 @@ export const getAllPosts = async (req, res) => {
       order: [["createdAt", "DESC"]]
     });
 
-    if (posts.length === 0) {
-      return res.status(200).json([]);
-    }
-
     const formattedPosts = formatPosts(posts);
 
     res.status(200).json(formattedPosts);
